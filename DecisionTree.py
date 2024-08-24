@@ -10,7 +10,7 @@ class DecisionTree:
         self.max_depth = max_depth
         self.criterium = criterium
 
-    def information_gain(y,y_left,y_right,criterium='entropy'):
+    def information_gain(self,y,y_left,y_right,criterium='entropy'):
         def entropy(y):
             entropy = 0
             if len(y) == 0:
@@ -34,14 +34,31 @@ class DecisionTree:
             information_gain = gini_impurty(y) - (len(y_left) / m * gini_impurty(y_left) + len(y_right) / m * gini_impurty(y_right))
         return information_gain
 
+    def split(self,X,y,feature,decision):
+        left_index = np.where(X[:,feature] <= decision)
+        right_index = np.where(X[:,feature] > decision)
+        return X[left_index],X[right_index],y[left_index],y[right_index]
 
-    def get_information(actual_impurty,left,right):
-        pass
+    def best_split(self,X,y):
+        best_gain = -1
+        best_feature = None
+        best_threshold = None
 
-    def split(X,y):
-        pass
+        for feature in range(X.shape[1]):
+            thresholds = np.unique(X[:,feature])
+            for threshold in thresholds:
+                X_left,X_right,y_left,y_right = self.split(X,y,feature,threshold)
+                if len(y_left) == 0 or len(y_right) == 0:
+                    continue
 
-    def generate_tree(X,y,max_depth=10):
+                gain = self.information_gain(y,y_left,y_right,self.criterium)
+                if gain > best_gain:
+                    best_gain = gain
+                    best_feature = feature
+                    best_threshold = threshold
+        return best_feature, best_threshold
+
+    def generate_tree(self,X,y,max_depth=10):
         # TODO
         pass
     
