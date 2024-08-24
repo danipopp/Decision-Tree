@@ -2,13 +2,18 @@ from sklearn.datasets import load_iris
 import numpy as np
 
 class TreeNode:
-    def __inti__(self,feature=None,left=None,right=None):
-        pass
+    def __inti__(self, feature = None,threshold = None, left = None, right = None, value = None):
+        self.feature = feature
+        self.threshold = threshold
+        self.left = left
+        self.right = right
+        self.value = value
 
 class DecisionTree:
-    def __inti__(self,max_depth=0,criterium='entropy'):
+    def __init__(self,max_depth=0,criterium='entropy'):
         self.max_depth = max_depth
         self.criterium = criterium
+        self.root = None
 
     def information_gain(self,y,y_left,y_right,criterium='entropy'):
         def entropy(y):
@@ -58,13 +63,48 @@ class DecisionTree:
                     best_threshold = threshold
         return best_feature, best_threshold
 
-    def generate_tree(self,X,y,max_depth=10):
-        # TODO
-        pass
+    def generate_tree(self,X,y,depth=0):
+        num_samples, num_feature = X.shape
+        num_labels = len(np.unique(y))
+
+        if depth >= self.max_depth or num_labels == 1 or num_samples < 2:
+            leaf_value = self.most_common_value(y)
+            return TreeNode(value = leaf_value)
+        
+        feature, threshold = self.best_split(X,y)
+        if feature is None:
+            return TreeNode(value = self.most_common_value(y))
+        
+        X_left, X_right, y_left, y_right = self.split(X, y, feature, threshold)
+        left_child = self.build_tree(X_left, y_left, depth + 1)
+        right_child = self.build_tree(X_right, y_right, depth + 1)
+        
+        return TreeNode(feature = feature, threshold = threshold, left= left_child, right = right_child)
+
+    def most_common_value(self,y):
+        np.bincount(y).argmax()
+
+    def fit(self,X,y):
+        self.root = self.generate_tree(X,y)
+
+    def predict_one(self, x, node):
+        if node.value is not None:
+            return node.value
+        if x[node.feature] <= node.threshold:
+            return self.predict_one(x, node.left)
+        else:
+            return self.predict_one(x, node.right)
+    
+    def predict(self, X):
+        return [self.predict_one(x, self.root) for x in X]
     
 if __name__ == '__main__':
     iris = load_iris()
     X, y = iris.data, iris.target
 
-    print(np.shape(X))
-    print(np.shape(y))
+    tree = DecisionTree(max_depth=3,criterium='entropy')
+    tree.fit(X, y)
+    predictions = tree.predict(X)
+
+    accuracy = np.sum(predictions == y) / len(y)
+    print(f'Accuracy: {accuracy * 100:.2f}%')
