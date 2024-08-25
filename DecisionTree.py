@@ -2,7 +2,7 @@ from sklearn.datasets import load_iris
 import numpy as np
 
 class TreeNode:
-    def __inti__(self, feature = None,threshold = None, left = None, right = None, value = None):
+    def __init__(self, feature = None, threshold = None, left = None, right = None, value = None):
         self.feature = feature
         self.threshold = threshold
         self.left = left
@@ -15,29 +15,31 @@ class DecisionTree:
         self.criterium = criterium
         self.root = None
 
-    def information_gain(self,y,y_left,y_right,criterium='entropy'):
+    def information_gain(self, y, y_left, y_right, criterium='entropy'):
         def entropy(y):
             entropy = 0
             if len(y) == 0:
                 return 0
             for i in np.unique(y):
-                p = np.sum(y==i)/len(y) # proportion of one class
-                entropy += -p * np.log2(p) - (1-p) * np.log2(1-p) 
-
-            return 
-        def gini_impurty(y):
+                p = np.sum(y == i) / len(y)  # proportion of one class
+                entropy += -p * np.log2(p)   # entropy for the class
+            
+            return entropy
+    
+        def gini_impurity(y):
             gini = 0
             for i in np.unique(y):
-                gini = -(np.sum(y==i)/len(y))**2
+                p = np.sum(y == i) / len(y)
+                gini += p ** 2
             return 1.0 - gini
-        
-        information_gain = 0
+    
         m = len(y)
         if criterium == 'entropy':
-            information_gain = entropy(y) - (len(y_left)/m * entropy(y_left) + len(y_right)/ m * entropy(y_right))
+            information_gain = entropy(y) - (len(y_left) / m * entropy(y_left) + len(y_right) / m * entropy(y_right))
         elif criterium == 'gini':
-            information_gain = gini_impurty(y) - (len(y_left) / m * gini_impurty(y_left) + len(y_right) / m * gini_impurty(y_right))
+            information_gain = gini_impurity(y) - (len(y_left) / m * gini_impurity(y_left) + len(y_right) / m * gini_impurity(y_right))
         return information_gain
+
 
     def split(self,X,y,feature,decision):
         left_index = np.where(X[:,feature] <= decision)
@@ -76,13 +78,13 @@ class DecisionTree:
             return TreeNode(value = self.most_common_value(y))
         
         X_left, X_right, y_left, y_right = self.split(X, y, feature, threshold)
-        left_child = self.build_tree(X_left, y_left, depth + 1)
-        right_child = self.build_tree(X_right, y_right, depth + 1)
+        left_child = self.generate_tree(X_left, y_left, depth + 1)
+        right_child = self.generate_tree(X_right, y_right, depth + 1)
         
         return TreeNode(feature = feature, threshold = threshold, left= left_child, right = right_child)
 
     def most_common_value(self,y):
-        np.bincount(y).argmax()
+        return np.bincount(y).argmax()
 
     def fit(self,X,y):
         self.root = self.generate_tree(X,y)
